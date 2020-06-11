@@ -25,25 +25,28 @@ Modal.setAppElement('#root');
 class Home extends Component {
 
   async componentWillMount() {
-    const roomId = encodeURI(this.props.match.params.roomId)
+    const roomId = encodeURI(this.props.match.params.roomId);
 
-    const user = await this.createUser()
+    const user = await this.createUser();
 
-    const socket = connectSocket(roomId)
+    const socket = connectSocket(roomId);
 
     this.socket = socket;
 
     socket.on('disconnect', () => {
-      this.props.toggleSocketConnected(false)
-    })
+      this.props.toggleSocketConnected(false);
+    });
 
+    console.log('chours', socket, socket.on);
     socket.on('connect', () => {
-      this.initApp(user)
-      this.props.toggleSocketConnected(true)
-    })
+      console.log('tipi', this.props);
+      this.initApp(user);
+      console.log('test', this.props, this.props.toggleSocketConnected);
+      this.props.toggleSocketConnected(true);
+    });
 
-    socket.on('USER_ENTER', (payload) => {
-      this.props.receiveUnencryptedMessage('USER_ENTER', payload)
+    socket.on('USER_ENTER', payload => {
+      this.props.receiveUnencryptedMessage('USER_ENTER', payload);
       this.props.sendEncryptedMessage({
         type: 'ADD_USER',
         payload: {
@@ -52,44 +55,48 @@ class Home extends Component {
           isOwner: this.props.iAmOwner,
           id: this.props.userId,
         },
-      })
+      });
       if (payload.users.length === 1) {
         this.props.openModal('Welcome');
       }
-    })
-
-    socket.on('USER_EXIT', (payload) => {
-      this.props.receiveUnencryptedMessage('USER_EXIT', payload)
-    })
-
-    socket.on('ENCRYPTED_MESSAGE', (payload) => {
-      this.props.receiveEncryptedMessage(payload)
-    })
-
-    socket.on('TOGGLE_LOCK_ROOM', (payload) => {
-      this.props.receiveUnencryptedMessage('TOGGLE_LOCK_ROOM', payload)
-    })
-
-    socket.on('ROOM_LOCKED', (payload) => {
-      this.props.openModal('Room Locked')
     });
 
-    window.addEventListener('beforeunload', (evt) => {
-      socket.emit('USER_DISCONNECT')
+    socket.on('USER_EXIT', payload => {
+      this.props.receiveUnencryptedMessage('USER_EXIT', payload);
+    });
+
+    socket.on('ENCRYPTED_MESSAGE', payload => {
+      this.props.receiveEncryptedMessage(payload);
+    });
+
+    socket.on('TOGGLE_LOCK_ROOM', payload => {
+      this.props.receiveUnencryptedMessage('TOGGLE_LOCK_ROOM', payload);
+    });
+
+    socket.on('ROOM_LOCKED', payload => {
+      this.props.openModal('Room Locked');
+    });
+
+    window.addEventListener('beforeunload', evt => {
+      socket.emit('USER_DISCONNECT');
     });
   }
 
   componentDidMount() {
-    this.bindEvents()
+    this.bindEvents();
 
-    this.beep = window.Audio && new window.Audio(beepFile)
+    this.beep = window.Audio && new window.Audio(beepFile);
   }
 
   componentWillReceiveProps(nextProps) {
-    Tinycon.setBubble(nextProps.faviconCount)
+    Tinycon.setBubble(nextProps.faviconCount);
 
-    if (nextProps.faviconCount !== 0 && nextProps.faviconCount !== this.props.faviconCount && this.props.soundIsEnabled) {
-      this.beep.play()
+    if (
+      nextProps.faviconCount !== 0 &&
+      nextProps.faviconCount !== this.props.faviconCount &&
+      this.props.soundIsEnabled
+    ) {
+      this.beep.play();
     }
   }
 
@@ -100,65 +107,76 @@ class Home extends Component {
           component: <Connecting />,
           title: 'Connecting...',
           preventClose: true,
-        }
+        };
       case 'About':
         return {
           component: <About roomId={this.props.roomId} />,
           title: this.props.translations.aboutHeader,
-        }
+        };
       case 'Settings':
         return {
-          component: <Settings roomId={this.props.roomId} toggleSoundEnabled={this.props.toggleSoundEnabled} soundIsEnabled={this.props.soundIsEnabled} setLanguage={this.props.setLanguage} language={this.props.language} translations={this.props.translations} />,
+          component: (
+            <Settings
+              roomId={this.props.roomId}
+              toggleSoundEnabled={this.props.toggleSoundEnabled}
+              soundIsEnabled={this.props.soundIsEnabled}
+              setLanguage={this.props.setLanguage}
+              language={this.props.language}
+              translations={this.props.translations}
+            />
+          ),
           title: this.props.translations.settingsHeader,
-        }
+        };
       case 'Welcome':
         return {
-          component: <Welcome roomId={this.props.roomId} close={this.props.closeModal} translations={this.props.translations} />,
+          component: (
+            <Welcome roomId={this.props.roomId} close={this.props.closeModal} translations={this.props.translations} />
+          ),
           title: this.props.translations.welcomeHeader,
-        }
+        };
       case 'Room Locked':
         return {
           component: <RoomLocked modalContent={this.props.translations.lockedRoomHeader} />,
           title: this.props.translations.lockedRoomHeader,
           preventClose: true,
-        }
+        };
       default:
         return {
           component: null,
           title: null,
-        }
+        };
     }
   }
 
   initApp(user) {
     this.socket.emit('USER_ENTER', {
       publicKey: user.publicKey,
-    })
+    });
   }
 
   bindEvents() {
     window.onfocus = () => {
-      this.props.toggleWindowFocus(true)
-    }
+      this.props.toggleWindowFocus(true);
+    };
 
     window.onblur = () => {
-      this.props.toggleWindowFocus(false)
-    }
+      this.props.toggleWindowFocus(false);
+    };
   }
 
   createUser() {
-    return new Promise(async (resolve) => {
-      const username = shortId.generate()
+    return new Promise(async resolve => {
+      const username = shortId.generate();
 
-      const encryptDecryptKeys = await crypto.createEncryptDecryptKeys()
-      const exportedEncryptDecryptPrivateKey = await crypto.exportKey(encryptDecryptKeys.privateKey)
-      const exportedEncryptDecryptPublicKey = await crypto.exportKey(encryptDecryptKeys.publicKey)
+      const encryptDecryptKeys = await crypto.createEncryptDecryptKeys();
+      const exportedEncryptDecryptPrivateKey = await crypto.exportKey(encryptDecryptKeys.privateKey);
+      const exportedEncryptDecryptPublicKey = await crypto.exportKey(encryptDecryptKeys.publicKey);
 
       this.props.createUser({
         username,
         publicKey: exportedEncryptDecryptPublicKey,
         privateKey: exportedEncryptDecryptPrivateKey,
-      })
+      });
 
       resolve({
         publicKey: exportedEncryptDecryptPublicKey,
@@ -167,15 +185,18 @@ class Home extends Component {
   }
 
   render() {
-    const modalOpts = this.getModal()
+    const modalOpts = this.getModal();
     return (
       <div className={classNames(styles.styles, 'h-100')}>
         <div className="nav-container">
-          {!this.props.socketConnected &&
+          {!this.props.socketConnected && (
             <div className="alert-banner">
-              <span className="icon"><AlertCircle size="15" /></span> <span>Disconnected</span>
+              <span className="icon">
+                <AlertCircle size="15" />
+              </span>{' '}
+              <span>Disconnected</span>
             </div>
-          }
+          )}
           <Nav
             members={this.props.members}
             roomId={this.props.roomId}
@@ -209,27 +230,23 @@ class Home extends Component {
           onRequestClose={this.props.closeModal}
         >
           <div className="react-modal-header">
-            {!modalOpts.preventClose &&
+            {!modalOpts.preventClose && (
               <button onClick={this.props.closeModal} className="btn btn-link btn-plain close-modal">
                 <X />
               </button>
-            }
-            <h3 className="react-modal-title">
-              {modalOpts.title}
-            </h3>
+            )}
+            <h3 className="react-modal-title">{modalOpts.title}</h3>
           </div>
-          <div className="react-modal-component">
-            {modalOpts.component}
-          </div>
+          <div className="react-modal-component">{modalOpts.component}</div>
         </Modal>
       </div>
-    )
+    );
   }
 }
 
 Home.defaultProps = {
   modalComponent: null,
-}
+};
 
 Home.propTypes = {
   receiveEncryptedMessage: PropTypes.func.isRequired,
@@ -254,7 +271,7 @@ Home.propTypes = {
   toggleSocketConnected: PropTypes.func.isRequired,
   socketConnected: PropTypes.bool.isRequired,
   sendUnencryptedMessage: PropTypes.func.isRequired,
-  sendEncryptedMessage: PropTypes.func.isRequired
-}
+  sendEncryptedMessage: PropTypes.func.isRequired,
+};
 
 export default Home;

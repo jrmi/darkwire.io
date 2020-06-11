@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Home component is displaying 1`] = `
+exports[`Home component Should display 1`] = `
 <DocumentFragment>
   <div
     class="styles h-100"
